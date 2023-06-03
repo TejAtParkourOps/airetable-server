@@ -7,8 +7,7 @@ COPY package*.json ./
 RUN --mount=type=secret,id=npmrc,target=/root/.npmrc npm ci
 
 # copy source (includes .env file)
-COPY ./src/ ./
-COPY ./.env ./
+COPY ./ ./
 
 # set non-root user and run
 #RUN adduser -D myuser
