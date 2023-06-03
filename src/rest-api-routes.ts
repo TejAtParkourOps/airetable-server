@@ -1,10 +1,10 @@
-import { RestApiRouteCollection } from "./server-framework/rest-api-server";
+import { RestApiRouteSpecification } from "./server-framework";
 import { receiveAirtableWebhookNotification } from "./controllers/base-sync";
 
-export default [
-  [
-    "post",
-    "/airtable-webhook-notification",
-    receiveAirtableWebhookNotification,
-  ],
-] as RestApiRouteCollection;
+const routes: RestApiRouteSpecification = {
+  "/airtable-webhook-notification": {
+    post: receiveAirtableWebhookNotification,
+  },
+};
+
+export default routes;

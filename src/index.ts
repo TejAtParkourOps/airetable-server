@@ -2,8 +2,10 @@ import configManager from "./configuration-manager";
 import Service from "./server-framework";
 import socketIoApiRoutes from "./socket-io-api-routes";
 import fb from "./integrations/firebase";
+import restApiRoutes from "./rest-api-routes";
 
 console.log("Attempting to run server with configs:", configManager.configs);
+
 new Service(
   {
     host: configManager.configs.server.host,
@@ -13,5 +15,5 @@ new Service(
   },
   fb.verifyAuthToken,
   socketIoApiRoutes,
-  []
+  restApiRoutes
 );

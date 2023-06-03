@@ -11,7 +11,7 @@ import {
 } from "node:https";
 import {
   initializeRestApiServer,
-  RestApiRouteCollection,
+  RestApiRouteSpecification,
 } from "./rest-api-server";
 import {
   initializeSocketIoApiServer,
@@ -22,8 +22,14 @@ import { CorsOptions } from "cors";
 import { installEventHandlers } from "./event-handler";
 
 export { registerEvent, EventMessageHandler } from "./event-handler";
-export { SocketIoRouteHandler } from "./socket-api-server";
-export { RestApiRouteHandler } from "./rest-api-server";
+export {
+  SocketIoApiRouteCollection,
+  SocketIoRouteHandler,
+} from "./socket-api-server";
+export {
+  RestApiRouteSpecification,
+  RestApiRouteHandler,
+} from "./rest-api-server";
 
 export interface ServerConfiguration {
   host: string;
@@ -37,7 +43,7 @@ class Service<TDecodedAuthToken> {
     config: ServerConfiguration,
     verifyAuthTokenFn: VerifyAuthTokenFn<TDecodedAuthToken>,
     socketIoRoutes: SocketIoApiRouteCollection<TDecodedAuthToken>,
-    restRoutes: RestApiRouteCollection
+    restRoutes: RestApiRouteSpecification
   ) {
     console.info("Server is running.");
 

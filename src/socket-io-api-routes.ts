@@ -1,4 +1,4 @@
-import { SocketIoApiRouteCollection } from "./server-framework/socket-api-server";
+import { SocketIoApiRouteCollection } from "./server-framework";
 import { DecodedIdToken } from "./models/airtable";
 
 import { createBaseSync } from "./controllers/base-sync";

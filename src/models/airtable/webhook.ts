@@ -6,18 +6,11 @@ import {
   getListOfWebhookPayloads as airtableGetListOfWebhookPayloads,
 } from "../../integrations/airtable";
 import configManager from "../../configuration-manager";
-import assert from "node:assert";
 import fb from "../../integrations/firebase";
-import restApiRoutes from "../../rest-api-routes";
 export { AirtableWebhookNotification } from "../../integrations/airtable";
 
-// compute notification url for this deployment...
-const notificationUrlRestApiPath = `/airtable-webhook-notification`;
-// ensure we have registered a handler for it.
-assert(restApiRoutes.find((r) => r[1] === notificationUrlRestApiPath));
-// the url:
 const notificationUrl =
-  configManager.configs.server.publicAddress + notificationUrlRestApiPath;
+  configManager.configs.server.publicAddress + `/airtable-webhook-notification`;
 
 type WebhookEntry = {
   id: string;
