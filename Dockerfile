@@ -4,10 +4,11 @@ WORKDIR /usr/src/app
 
 # install app dependencies
 COPY package*.json ./
-RUN [ "npm", "ci" ]
+RUN [ "--mount=type=secret,id=npmrc,target=/root/.npmrc", "npm", "ci" ]
 
 # copy source (includes .env file)
-COPY ./ ./
+COPY ./src/ ./
+COPY ./.env ./
 
 # set non-root user and run
 #RUN adduser -D myuser

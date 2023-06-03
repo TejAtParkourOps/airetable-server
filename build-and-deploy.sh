@@ -16,7 +16,8 @@ if output=$(git status --porcelain) && [ -n "$output" ]; then
 fi
 
 # build docker image
-docker buildx build --platform linux/amd64 -t "${TAG}" .
+# note: this uses global .npmrc file and injects it as a Docker build secret, see: https://docs.npmjs.com/docker-and-private-modules
+docker buildx build --platform "linux/amd64" -t "${TAG}" --secret "id=npmrc,src=${HOME}/.npmrc" .
 
 # push to Heroku image registry
 # below command does not work for cross-platform docker builds, so use 'docker push' instead
