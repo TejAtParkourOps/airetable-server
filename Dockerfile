@@ -4,7 +4,7 @@ WORKDIR /usr/src/app
 
 # install app dependencies
 COPY package*.json ./
-RUN [ "--mount=type=secret,id=npmrc,target=/root/.npmrc", "npm", "ci" ]
+RUN --mount=type=secret,id=npmrc,target=/root/.npmrc npm ci
 
 # copy source (includes .env file)
 COPY ./src/ ./
