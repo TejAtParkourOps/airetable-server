@@ -10,20 +10,24 @@ TAG="registry.heroku.com/${HEROKU_APP}/${IMAGE_NAME}"
 npm run format
 
 # ensure clean git
-if output=$(git status --porcelain) && [ -z "$output" ]; then
-  # Working directory clean
-  exit 0
-else 
-  # Uncommitted changes
-  echo "Please commit changes to Git repository before deploying!"
-  exit 1
+if output=$(git status --porcelain) && [ -n "$output" ]; then
+    echo "Please commit changes to Git repository before deploying!"
+    exit 1
 fi
 
-# build docker image and push to Heroku image registry
+# build docker image
 docker buildx build --platform linux/amd64 -t "${TAG}" .
-docker push "${TAG}"
-# does not work for cross-platform docker builds
+
+# push to Heroku image registry
+# below command does not work for cross-platform docker builds, so use 'docker push' instead
 #heroku container:push --app parkour-ops-poc "${TAG}"
+docker push "${TAG}"
 
 # tell Heroku to release image for deployment
 heroku container:release --app ${HEROKU_APP} "${IMAGE_NAME}"
+
+# bump up patch number
+npm version patch
+
+# echo success
+echo "Deployment successful!"
