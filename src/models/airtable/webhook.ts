@@ -12,11 +12,12 @@ import restApiRoutes from "../../rest-api-routes";
 export { AirtableWebhookNotification } from "../../integrations/airtable";
 
 // compute notification url for this deployment...
-const notificationUrlRestApiPath = `airtable-webhook-notification`;
+const notificationUrlRestApiPath = `/airtable-webhook-notification`;
 // ensure we have registered a handler for it.
 assert(restApiRoutes.find((r) => r[1] === notificationUrlRestApiPath));
 // the url:
-const notificationUrl = `${configManager.configs.server.publicAddress}/${notificationUrlRestApiPath}`;
+const notificationUrl =
+  configManager.configs.server.publicAddress + notificationUrlRestApiPath;
 
 type WebhookEntry = {
   id: string;
