@@ -6,6 +6,9 @@ IMAGE_NAME=web
 HEROKU_APP=parkour-ops-poc
 TAG="registry.heroku.com/${HEROKU_APP}/${IMAGE_NAME}"
 
+# attempt Heroku (auto) login, script will fail when attempting to release container if not logged in
+heroku container:login
+
 # prettier...
 npm run format
 
