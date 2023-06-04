@@ -64,7 +64,7 @@ function fieldSpecsToFields(
     fields[fieldId] = {
       id: fieldId,
       name: fieldSpec.name,
-      description: "No description provided.",
+      description: undescribed,
       type: fieldSpec.type,
     };
   }
