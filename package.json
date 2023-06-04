@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "nodemon -r dotenv/config -r tsconfig-paths/register ./src/index.ts",
     "serve": "ts-node -r dotenv/config -r tsconfig-paths/register ./src/index.ts",
+    "deploy": "./build-and-deploy.sh",
     "format": "prettier --write ."
   },
   "author": "",
