@@ -15,9 +15,16 @@ const notificationUrl =
 type WebhookEntry = {
   id: string;
   macSecretBase64: string;
+  userId: string;
+  projectId: string;
 };
 
-async function createWebhook(personalAccessToken: string, baseId: string) {
+async function createWebhook(
+  personalAccessToken: string,
+  baseId: string,
+  userId: string,
+  projectId: string
+) {
   const newWebhook = await airtableCreateWebhook(
     personalAccessToken,
     baseId,
@@ -26,6 +33,8 @@ async function createWebhook(personalAccessToken: string, baseId: string) {
   const webhookEntry: WebhookEntry = {
     id: newWebhook.id,
     macSecretBase64: newWebhook.macSecretBase64,
+    userId,
+    projectId,
     // note: we don't store expiry timestamp since it's better to consult source of truth directly
     // purpose is only to store secret for the webhook
   };
@@ -33,7 +42,7 @@ async function createWebhook(personalAccessToken: string, baseId: string) {
   return webhookEntry;
 }
 
-async function readWebhook(baseId: string) {
+export async function readWebhook(baseId: string) {
   const _webhookEntry = await fb.db(`bases/${baseId}/webhook`).get();
   if (!_webhookEntry) return undefined;
   return _webhookEntry.val() as WebhookEntry;
@@ -61,13 +70,20 @@ async function isWebhookValid(
 
 export async function ensureWebhook(
   personalAccessToken: string,
-  baseId: string
+  baseId: string,
+  userId: string,
+  projectId: string
 ) {
   const baseWebhook = await readWebhook(baseId);
 
   // if no webhook registered for base, create a fresh one
   if (!baseWebhook) {
-    const result = await createWebhook(personalAccessToken, baseId);
+    const result = await createWebhook(
+      personalAccessToken,
+      baseId,
+      userId,
+      projectId
+    );
     return result;
   }
 
@@ -89,7 +105,12 @@ export async function ensureWebhook(
       // delete existing
       await airtableDeleteWebhook(personalAccessToken, baseId, baseWebhook.id);
       // create new
-      const result = await createWebhook(personalAccessToken, baseId);
+      const result = await createWebhook(
+        personalAccessToken,
+        baseId,
+        userId,
+        projectId
+      );
       return result;
     }
   }
