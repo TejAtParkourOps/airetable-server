@@ -187,7 +187,7 @@ const emitBaseChangedEvent = registerEvent(
   async (socketIoServer, payload: BaseChangedEvent) => {
     const baseId = payload.baseId;
     const webhookId = payload.webhookId;
-    const webhookEntry = await readWebhook(baseId);
+    const webhookEntry = await readWebhook(webhookId);
     if (!webhookEntry)
       throw Error("Could not retrieve project from Airtable webhook!");
     const projectEntry = await readProject(

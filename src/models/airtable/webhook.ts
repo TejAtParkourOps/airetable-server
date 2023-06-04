@@ -38,12 +38,12 @@ async function createWebhook(
     // note: we don't store expiry timestamp since it's better to consult source of truth directly
     // purpose is only to store secret for the webhook
   };
-  await fb.db(`bases/${baseId}/webhook`).set(webhookEntry);
+  await fb.db(`webhooks/${webhookEntry.id}`).set(webhookEntry);
   return webhookEntry;
 }
 
-export async function readWebhook(baseId: string) {
-  const _webhookEntry = await fb.db(`bases/${baseId}/webhook`).get();
+export async function readWebhook(webhookId: string) {
+  const _webhookEntry = await fb.db(`webhooks/${webhookId}`).get();
   if (!_webhookEntry) return undefined;
   return _webhookEntry.val() as WebhookEntry;
 }
