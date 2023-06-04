@@ -33,11 +33,13 @@ class ConfigurationManager<T extends ConfigurationSchema> {
 export default new ConfigurationManager({
   server: {
     host: loadOptionalEnvironmentVariable("HOST", "string") ?? "0.0.0.0",
+    // 0.0.0.0 accepts traffic from all available interfaces (rather than just loopback in the case of 127.0.0.1).
     port: loadOptionalEnvironmentVariable("PORT", "number", true) ?? 3434,
-    publicAddress:
-      loadOptionalEnvironmentVariable("PUBLIC_ADDRESS", "string") ??
-      "0.0.0.0:3434",
+    // note: 'AIRETABLE_' prefix is omitted because Heroku container have their PORT specified automatically/allocated by their system.
+    publicAddress: loadRequiredEnvironmentVariable("PUBLIC_ADDRESS", "string"),
+    // this will be used to generate the notificationUrl used by Airtable Webhook; the Airtable system will not accept non-https urls.
     useTLS: loadOptionalEnvironmentVariable("USE_TLS", "boolean") ?? false,
+    // assume this will be deployed in a container behind a load-balancer/reverse-proxy that implements https at user-facing endpoint.
     cors: {
       origin: loadOptionalEnvironmentVariable("CORS_ORIGIN", "string") ?? "*",
     },
