@@ -1,6 +1,6 @@
 {
   "name": "airetable-server",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "description": "Server implementation to provision the Airetable service.",
   "main": "index.js",
   "scripts": {
