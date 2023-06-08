@@ -3,7 +3,7 @@ import {
   Table,
   Record as RecordEntry,
   Field,
-  Cell,
+  // Cell,
 } from "@parkour-ops/airetable-contract";
 import {
   getListOfBases,
@@ -40,19 +40,19 @@ function extractFieldsFromTable(table: AirtableTable): Record<string, Field> {
   return result;
 }
 
-function extractCellsFromRecord(
-  record: AirtableRecord,
-  tableFields: ReturnType<typeof extractFieldsFromTable>
-): Record<string, Cell> {
-  const result: Record<string, Cell> = {};
-  Object.entries(record.fields).forEach(([_fId, _fVal]) => {
-    result[_fId] = {
-      field: tableFields[_fId],
-      value: _fVal,
-    };
-  });
-  return result;
-}
+// function extractCellsFromRecord(
+//   record: AirtableRecord,
+//   tableFields: ReturnType<typeof extractFieldsFromTable>
+// ): Record<string, Cell> {
+//   const result: Record<string, Cell> = {};
+//   Object.entries(record.fields).forEach(([_fId, _fVal]) => {
+//     result[_fId] = {
+//       field: tableFields[_fId],
+//       value: _fVal,
+//     };
+//   });
+//   return result;
+// }
 
 async function fetchRecords(
   personalAccessToken: string,
@@ -70,7 +70,7 @@ async function fetchRecords(
     result[_r.id] = {
       id: _r.id,
       createdTime: Date.parse(_r.createdTime),
-      cells: extractCellsFromRecord(_r, tableFields),
+      cells: _r.fields, //extractCellsFromRecord(_r, tableFields),
     };
   });
   // return

@@ -7,7 +7,6 @@ import {
   SyncNotification,
   Field,
   Record as Rec,
-  Cell,
 } from "@parkour-ops/airetable-contract";
 import { readProject } from "../models/project";
 import {
@@ -74,20 +73,20 @@ function fieldSpecsToFields(
   return fields;
 }
 
-function cellSpecsToCells(
-  tableFields: { [id: string]: Field },
-  cellSpecs?: { [id: string]: any }
-) {
-  const cells: { [id: string]: Cell } = {};
-  if (!cellSpecs) return cells;
-  for (const [fieldId, cellValue] of Object.entries(cellSpecs)) {
-    cells[fieldId] = {
-      field: tableFields[fieldId],
-      value: cellValue,
-    };
-  }
-  return cells;
-}
+// function cellSpecsToCells(
+//   tableFields: { [id: string]: Field },
+//   cellSpecs?: { [id: string]: any }
+// ) {
+//   const cells: { [id: string]: Cell } = {};
+//   if (!cellSpecs) return cells;
+//   for (const [fieldId, cellValue] of Object.entries(cellSpecs)) {
+//     cells[fieldId] = {
+//       field: tableFields[fieldId],
+//       value: cellValue,
+//     };
+//   }
+//   return cells;
+// }
 
 function recordSpecsToRecords(
   baseId: string,
