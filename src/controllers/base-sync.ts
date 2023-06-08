@@ -27,8 +27,11 @@ import {
   getListOfWebhookPayloads,
   WebhookPayload,
   CreateTableSpec,
+  ChangeTableSpec,
   CreateFieldSpec,
   CreateRecordSpec,
+  ChangeFieldSpec,
+  ChangeRecordSpec,
 } from "../integrations/airtable";
 
 export type BaseChangedEvent = {
@@ -98,13 +101,13 @@ function recordSpecsToRecords(
     records[recordId] = {
       id: recordId,
       createdTime: Date.parse(recordSpec.createdTime),
-      cells: cellSpecsToCells(tableFields, recordSpec.cellValuesByFieldId),
+      cells: recordSpec.cellValuesByFieldId, //cellSpecsToCells(tableFields, recordSpec.cellValuesByFieldId),
     };
   }
   return records;
 }
 
-function parseTableAdditionChanges(
+function parseTableAdditions(
   baseId: string,
   createTableSpecs?: { [id: string]: CreateTableSpec }
 ) {
@@ -143,7 +146,7 @@ function parseTableAdditionChanges(
   return tablesToAdd;
 }
 
-function parseTableDeletionChanges(
+function parseTableDeletions(
   baseId: string,
   deletedTablesById?: Array<string>
 ) {
@@ -165,14 +168,259 @@ function parseTableDeletionChanges(
   return tablesToDelete;
 }
 
+function parseFieldCreationInTable(
+  baseId: string,
+  tableId: string,
+  createFieldSpec?: { [id: string]: CreateFieldSpec }
+) {
+  const fieldsToCreate: Array<Change<"create", "field">> = [];
+  if (!createFieldSpec) return fieldsToCreate;
+  //
+  for (const [key, val] of Object.entries(createFieldSpec)) {
+    fieldsToCreate.push({
+      type: "create",
+      resourceAddress: {
+        is: "field",
+        baseId,
+        tableId,
+        fieldId: key,
+        recordId: null,
+      },
+      data: {
+        id: key,
+        name: val?.name ?? untitled,
+        description: undescribed,
+        type: val?.type,
+      },
+    });
+  }
+  //
+  return fieldsToCreate;
+}
+
+function parseFieldUpdateInTable(
+  baseId: string,
+  tableId: string,
+  changeFieldSpec?: { [id: string]: ChangeFieldSpec }
+) {
+  const fieldsToUpdate: Array<Change<"update", "field">> = [];
+  if (!changeFieldSpec) return fieldsToUpdate;
+  //
+  for (const [fieldId, fieldSpec] of Object.entries(changeFieldSpec)) {
+    fieldsToUpdate.push({
+      type: "update",
+      resourceAddress: {
+        is: "field",
+        baseId,
+        tableId,
+        fieldId,
+        recordId: null,
+      },
+      data: {
+        id: fieldId,
+        name: fieldSpec.current.name ?? fieldSpec.previous?.name ?? untitled,
+        type: fieldSpec.current.type ?? fieldSpec.previous?.type,
+      },
+    });
+  }
+  //
+  return fieldsToUpdate;
+}
+
+function parseFieldDeletionInTable(
+  baseId: string,
+  tableId: string,
+  deleteFieldSpec: Array<string>
+) {
+  const fieldsToDelete: Array<Change<"delete", "field">> = [];
+  if (!deleteFieldSpec) return fieldsToDelete;
+  //
+  for (const fieldId in deleteFieldSpec) {
+    fieldsToDelete.push({
+      type: "delete",
+      resourceAddress: {
+        is: "field",
+        baseId,
+        tableId,
+        fieldId,
+        recordId: null,
+      },
+      data: null,
+    });
+  }
+  //
+  return fieldsToDelete;
+}
+
+function parseRecordCreationInTable(
+  baseId: string,
+  tableId: string,
+  createRecordSpec?: { [id: string]: CreateRecordSpec }
+) {
+  const recordsToCreate: Array<Change<"create", "record">> = [];
+  if (!createRecordSpec) return recordsToCreate;
+  //
+  for (const [recordId, recordSpec] of Object.entries(createRecordSpec)) {
+    recordsToCreate.push({
+      type: "create",
+      resourceAddress: {
+        is: "record",
+        baseId,
+        tableId,
+        recordId,
+        fieldId: null,
+      },
+      data: {
+        id: recordId,
+        createdTime: Date.parse(recordSpec.createdTime),
+        cells: recordSpec.cellValuesByFieldId, //cellSpecsToCells(tableFields, recordSpec.cellValuesByFieldId)
+      },
+    });
+  }
+  //
+  return recordsToCreate;
+}
+
+function parseRecordUpdateInTable(
+  baseId: string,
+  tableId: string,
+  changeRecordSpec?: { [id: string]: ChangeRecordSpec }
+) {
+  const recordsToUpdate: Array<Change<"update", "record">> = [];
+  if (!changeRecordSpec) return recordsToUpdate;
+  //
+  for (const [recordId, recordSpec] of Object.entries(changeRecordSpec)) {
+    recordsToUpdate.push({
+      type: "update",
+      resourceAddress: {
+        is: "record",
+        baseId,
+        tableId,
+        recordId,
+        fieldId: null,
+      },
+      data: {
+        id: recordId,
+        cells: recordSpec.current,
+      },
+    });
+  }
+  //
+  return recordsToUpdate;
+}
+
+function parseRecordDeletionInTable(
+  baseId: string,
+  tableId: string,
+  deleteRecordSpec: Array<string>
+) {
+  const recordsToDelete: Array<Change<"delete", "record">> = [];
+  if (!deleteRecordSpec) return recordsToDelete;
+  //
+  for (const recordId in deleteRecordSpec) {
+    recordsToDelete.push({
+      type: "delete",
+      resourceAddress: {
+        is: "record",
+        baseId,
+        tableId,
+        recordId,
+        fieldId: null,
+      },
+      data: null,
+    });
+  }
+  //
+  return recordsToDelete;
+}
+
+function parseTableUpdates(
+  changes: Array<Change<any, any>>,
+  baseId: string,
+  changeTablesSpec?: { [id: string]: ChangeTableSpec }
+) {
+  const tablesToUpdate: Array<Change<"update", "table">> = [];
+  if (!changeTablesSpec) return;
+  // process changes to table metadata
+  for (const [tableId, tableSpec] of Object.entries(changeTablesSpec)) {
+    tablesToUpdate.push({
+      type: "update",
+      resourceAddress: {
+        is: "table",
+        baseId,
+        tableId,
+        recordId: null,
+        fieldId: null,
+      },
+      data: {
+        id: tableId,
+        name:
+          tableSpec.changedMetadata?.current.name ??
+          tableSpec.changedMetadata?.previous.name ??
+          untitled,
+        description:
+          tableSpec.changedMetadata?.current.description ??
+          tableSpec.changedMetadata?.previous.description ??
+          undescribed,
+      },
+    });
+    changes.push(...tablesToUpdate);
+    // process field creations
+    changes.push(
+      ...parseFieldCreationInTable(
+        baseId,
+        tableId,
+        tableSpec?.createdFieldsById
+      )
+    );
+    // process field updates
+    changes.push(
+      ...parseFieldUpdateInTable(baseId, tableId, tableSpec?.changedFieldsById)
+    );
+    // process field deletions
+    changes.push(
+      ...parseFieldDeletionInTable(
+        baseId,
+        tableId,
+        tableSpec?.destroyedFieldIds
+      )
+    );
+    // process record creations
+    changes.push(
+      ...parseRecordCreationInTable(
+        baseId,
+        tableId,
+        tableSpec?.createdRecordsById
+      )
+    );
+    // process record updates
+    changes.push(
+      ...parseRecordUpdateInTable(
+        baseId,
+        tableId,
+        tableSpec?.changedRecordsById
+      )
+    );
+    // process record deletions
+    changes.push(
+      ...parseRecordDeletionInTable(
+        baseId,
+        tableId,
+        tableSpec?.destroyedRecordIds
+      )
+    );
+  }
+}
+
 function traverseAirtableWebhookPayload(
   baseId: string,
   payload: WebhookPayload
 ) {
   const changes: Array<Change<any, any>> = [];
   // deduce changes
-  changes.push(...parseTableDeletionChanges(baseId, payload.destroyedTableIds));
-  changes.push(...parseTableAdditionChanges(baseId, payload.createdTablesById));
+  changes.push(...parseTableDeletions(baseId, payload.destroyedTableIds));
+  changes.push(...parseTableAdditions(baseId, payload.createdTablesById));
+  parseTableUpdates(changes, baseId, payload.changedTablesById);
   // return result
   const result: SyncNotification = {
     number: payload.baseTransactionNumber,

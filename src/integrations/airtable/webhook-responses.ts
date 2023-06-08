@@ -99,6 +99,17 @@ export interface CreateFieldSpec {
   type: AirtableFieldType;
 }
 
+export type ChangeFieldSpec = {
+  current: {
+    name?: string;
+    type?: AirtableFieldType;
+  };
+  previous?: {
+    name?: string;
+    type?: AirtableFieldType;
+  };
+};
+
 export interface CreateRecordSpec {
   createdTime: string;
   cellValuesByFieldId: {
@@ -120,6 +131,32 @@ export interface ChangeTableSpec {
   changedMetadata?: {
     current: TableMetadata;
     previous: TableMetadata;
+  };
+  createdFieldsById?: {
+    [id: string]: CreateFieldSpec;
+  };
+  changedFieldsById: {
+    [id: string]: ChangeFieldSpec;
+  };
+  destroyedFieldIds: Array<string>;
+  createdRecordsById: {
+    [id: string]: CreateRecordSpec;
+  };
+  changedRecordsById: {
+    [id: string]: ChangeRecordSpec;
+  };
+  destroyedRecordIds: Array<string>;
+}
+
+export interface ChangeRecordSpec {
+  current: {
+    [id: string]: any;
+  };
+  previous?: {
+    [id: string]: any;
+  };
+  unchanged?: {
+    [id: string]: any;
   };
 }
 
