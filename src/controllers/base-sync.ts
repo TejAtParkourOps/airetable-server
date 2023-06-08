@@ -342,27 +342,29 @@ function parseTableUpdates(
   if (!changeTablesSpec) return;
   // process changes to table metadata
   for (const [tableId, tableSpec] of Object.entries(changeTablesSpec)) {
-    tablesToUpdate.push({
-      type: "update",
-      resourceAddress: {
-        is: "table",
-        baseId,
-        tableId,
-        recordId: null,
-        fieldId: null,
-      },
-      data: {
-        id: tableId,
-        name:
-          tableSpec.changedMetadata?.current.name ??
-          tableSpec.changedMetadata?.previous.name ??
-          untitled,
-        description:
-          tableSpec.changedMetadata?.current.description ??
-          tableSpec.changedMetadata?.previous.description ??
-          undescribed,
-      },
-    });
+    if (tableSpec.changedMetadata?.current) {
+      tablesToUpdate.push({
+        type: "update",
+        resourceAddress: {
+          is: "table",
+          baseId,
+          tableId,
+          recordId: null,
+          fieldId: null,
+        },
+        data: {
+          id: tableId,
+          name:
+            tableSpec.changedMetadata?.current.name ??
+            tableSpec.changedMetadata?.previous.name ??
+            untitled,
+          description:
+            tableSpec.changedMetadata?.current.description ??
+            tableSpec.changedMetadata?.previous.description ??
+            undescribed,
+        },
+      });
+    }
     changes.push(...tablesToUpdate);
     // process field creations
     changes.push(
