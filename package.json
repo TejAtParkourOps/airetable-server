@@ -2,16 +2,22 @@
   "name": "airetable-server",
   "version": "0.0.9",
   "description": "Server implementation to provision the Airetable service.",
-  "main": "index.js",
+  "main": "./dist/index.js",
   "scripts": {
     "dev": "nodemon -r dotenv/config -r tsconfig-paths/register ./src/index.ts",
     "serve": "ts-node -r dotenv/config -r tsconfig-paths/register ./src/index.ts",
     "deploy": "./build-and-deploy.sh",
     "format": "prettier --write ."
   },
-  "author": "",
-  "license": "ISC",
+  "contributors": [
+    {
+      "name": "Tej Birring",
+      "email": "tej@parkourops.com"
+    }
+  ],
+  "license": "SEE LICENSE IN LICENSE.md",
   "devDependencies": {
+    "@types/uuid": "^9.0.2",
     "nodemon": "^2.0.22",
     "prettier": "^2.8.8",
     "ts-node": "^10.9.1",
@@ -19,7 +25,7 @@
     "typescript": "^5.0.4"
   },
   "dependencies": {
-    "@parkour-ops/airetable-contract": "^0.0.18",
+    "@parkour-ops/airetable-contract": "^0.0.20",
     "axios": "^1.4.0",
     "cors": "^2.8.5",
     "crypto": "^1.0.1",
@@ -28,6 +34,7 @@
     "firebase-admin": "^11.9.0",
     "mqemitter": "^5.0.0",
     "socket.io": "^4.6.2",
-    "ts-essentials": "^9.3.2"
+    "ts-essentials": "^9.3.2",
+    "uuid": "^9.0.0"
   }
 }

@@ -38,7 +38,7 @@ export interface ServerConfiguration {
   cors: CorsOptions;
 }
 
-class Service<TDecodedAuthToken> {
+class Service<TDecodedAuthToken extends object> {
   constructor(
     config: ServerConfiguration,
     verifyAuthTokenFn: VerifyAuthTokenFn<TDecodedAuthToken>,
@@ -86,7 +86,7 @@ class Service<TDecodedAuthToken> {
     });
 
     // initialize API servers and install routes
-    initializeRestApiServer(restApiServer, restRoutes);
+    initializeRestApiServer(restApiServer, verifyAuthTokenFn, restRoutes);
     initializeSocketIoApiServer(
       verifyAuthTokenFn,
       socketIoApiServer,

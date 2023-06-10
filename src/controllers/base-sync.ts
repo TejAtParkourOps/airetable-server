@@ -32,6 +32,7 @@ import {
   ChangeFieldSpec,
   ChangeRecordSpec,
 } from "../integrations/airtable";
+import { untitled, undescribed } from "../generic";
 
 export type BaseChangedEvent = {
   baseId: string;
@@ -51,9 +52,6 @@ async function subscribeToBaseChangedEvent(
   // add user socket (representing session webhook) to room associated with base (since each base has only one webhook, shared across all projects affiliated with the base)
   socket.join(baseId);
 }
-
-const untitled = "<Untitled>";
-const undescribed = "<Undescribed>";
 
 function fieldSpecsToFields(
   baseId: string,
@@ -463,7 +461,7 @@ const emitBaseChangedEvent = registerEvent(
   }
 );
 
-export const createBaseSync: SocketIoRouteHandler<
+export const createBaseSyncHandler: SocketIoRouteHandler<
   DecodedIdToken,
   StartSyncBaseRequest,
   StartSyncBaseResponse
