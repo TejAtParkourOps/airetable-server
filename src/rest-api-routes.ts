@@ -5,21 +5,25 @@ const routes: RestApiRouteSpecification = {
   "/airtable-webhook-notification": {
     post: {
       authRequired: false,
-      handlerFn: receiveAirtableWebhookNotification
-    }
+      handlerFn: receiveAirtableWebhookNotification,
+    },
   },
   "/auth-status": {
     get: {
       authRequired: false,
-      handlerFn: (req, res) => {res.status(200).send({auth: req.auth})}
-    }
+      handlerFn: (req, res) => {
+        res.status(200).send({ auth: req.auth });
+      },
+    },
   },
   "/health-check": {
     get: {
       authRequired: false,
-      handlerFn: (req, res) => {res.status(200).send()}
-    }
-  }
+      handlerFn: (req, res) => {
+        res.status(200).send();
+      },
+    },
+  },
 };
 
 export default routes;
