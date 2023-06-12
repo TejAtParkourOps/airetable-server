@@ -8,12 +8,19 @@ import { MarkOptional } from "ts-essentials";
 import { v4 as uuidv4 } from "uuid";
 import { undescribed, untitled } from "../generic";
 import { Buildable } from "ts-essentials";
+import { AirtableBase, getListOfBases } from "../integrations/airtable";
+import { extractErrorDescription } from "../server-framework";
 
 export async function readProject(
   userId: string,
   projectId: string
 ): Promise<Project | undefined> {
-  const _project = await fb.db(`users/${userId}/projects/${projectId}`).get();
+  if (!projectId) {
+    throw Error("Project ID is required.");
+  }
+  const dbAddress = `users/${userId}/projects/${projectId}`;
+  console.debug(`Reading project at address: ${dbAddress}`);
+  const _project = await fb.db(dbAddress).get();
   if (!_project.exists) return undefined;
   return _project.val() as Project;
 }
@@ -22,30 +29,40 @@ export async function createProject(
   userId: string,
   project: CreateProjectRequest
 ): Promise<Project> {
-  return new Promise<Project>(async (res, rej) => {
-    const projectId = uuidv4();
-    await fb.db(`users/${userId}/projects/${projectId}`).set(
-      {
-        id: projectId,
-        name: project.name ?? untitled,
-        description: project.description ?? undescribed,
-        airtable: project.airtable,
-        created: Date.now(),
-      },
-      async (err) => {
-        if (err) {
-          rej(err);
-        } else {
-          const proj = await readProject(userId, projectId);
-          if (!proj) {
-            rej(new Error("Created project could not be read!"));
-          } else {
-            res(proj);
-          }
-        }
-      }
-    );
+  if (!project?.name) {
+    throw "project name is required.";
+  }
+  if (!project?.airtable?.personalAccessToken || !project?.airtable?.baseId) {
+    throw "Airtable credentials are required.";
+  }
+  // test Airtable credentials
+  let bases;
+  try {
+    bases = (await getListOfBases(project.airtable.personalAccessToken)).bases;
+  } catch (err) {
+    throw "could not probe Airtable base; check personal access token is valid.";
+  } 
+  if (!bases.find(base => base.id === project.airtable.baseId))
+      throw "the requested Airtable base does not exist, or the personal access token does not have sufficient permission."
+  // generate id and compute address
+  const projectId = uuidv4();
+  const dbAddress = `users/${userId}/projects/${projectId}`;
+  // set
+  // console.debug(`Creating project at address: ${dbAddress}`, project);
+  await fb.db(dbAddress).set({
+      id: projectId,
+      name: project.name ?? untitled,
+      description: project.description ?? undescribed,
+      airtable: project.airtable,
+      created: Date.now(),
   });
+  // read what was set
+  const proj = await readProject(userId, projectId);
+  if (!proj) {
+    throw "could not create project!";
+  }
+  // return
+  return proj;
 }
 
 export async function updateProject(

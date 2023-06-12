@@ -1,4 +1,4 @@
-import { SocketIoRouteHandler } from "../server-framework";
+import { SocketIoRouteHandler, extractErrorDescription } from "../server-framework";
 import { DecodedIdToken } from "../integrations/firebase";
 import {
   CreateProjectRequest,
@@ -26,7 +26,7 @@ export const createProjectHandler: SocketIoRouteHandler<
     const project = await createProject(tkn.uid, data);
     callback(makeSuccessResponse(project, 201, "Project created."));
   } catch (err) {
-    callback(makeErrorResponse(500, "Failed to create project."));
+    callback(makeErrorResponse(500, `Failed to create project: ${extractErrorDescription(err)}`));
   }
 };
 
