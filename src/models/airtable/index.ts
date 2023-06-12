@@ -1,3 +1,3 @@
 export * from "./resource";
-export * from "./webhook";
+export * from "./baseEntry";
 export { DecodedIdToken } from "../../integrations/firebase";

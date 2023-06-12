@@ -11,10 +11,10 @@ import {
 import { readProject } from "../models/project";
 import {
   readBase,
-  ensureWebhook,
   DecodedIdToken,
   AirtableWebhookNotification,
-  readWebhook,
+  ensureBaseEntry,
+  readBaseEntry,
 } from "../models/airtable";
 import {
   SocketIoRouteHandler,
@@ -41,14 +41,15 @@ export type BaseChangedEvent = {
 };
 
 async function subscribeToBaseChangedEvent(
-  socket: SocketIoSocket,
-  personalAccessToken: string,
-  baseId: string,
-  userId: string,
-  projectId: string
+  args: {
+    socket: SocketIoSocket,
+    personalAccessToken: string,
+    baseId: string
+  }
 ) {
+  const {socket, personalAccessToken, baseId} = args;
   // ensure webhook is set up so we can receive change notifications at REST endpoint
-  await ensureWebhook(personalAccessToken, baseId, userId, projectId);
+  await ensureBaseEntry({personalAccessToken, baseId});
   // add user socket (representing session webhook) to room associated with base (since each base has only one webhook, shared across all projects affiliated with the base)
   socket.join(baseId);
 }
@@ -429,38 +430,6 @@ function traverseAirtableWebhookPayload(
   return result;
 }
 
-const emitBaseChangedEvent = registerEvent(
-  "base-changed",
-  async (socketIoServer, payload: BaseChangedEvent) => {
-    const baseId = payload.baseId;
-    const webhookId = payload.webhookId;
-    const webhookEntry = await readWebhook(webhookId);
-    if (!webhookEntry)
-      throw Error("Could not retrieve project from Airtable webhook!");
-    const projectEntry = await readProject(
-      webhookEntry.userId,
-      webhookEntry.projectId
-    );
-    if (!projectEntry)
-      throw Error(
-        "Could not retrieve Airtable access credentials from project!"
-      );
-    const personalAccessToken = projectEntry.airtable.personalAccessToken;
-    // get webhook payloads
-    const payloads = await getListOfWebhookPayloads(
-      personalAccessToken,
-      baseId,
-      webhookId
-    );
-    for (const p of payloads) {
-      // traverse webhook payload: for each change in payload
-      const syncNotification = traverseAirtableWebhookPayload(baseId, p);
-      // emit a SyncNotification to client(s)
-      socketIoServer.to(baseId).emit(`${baseId}:changed`, syncNotification);
-    }
-  }
-);
-
 export const createBaseSyncHandler: SocketIoRouteHandler<
   DecodedIdToken,
   StartSyncBaseRequest,
@@ -511,19 +480,55 @@ export const createBaseSyncHandler: SocketIoRouteHandler<
     );
 
   // join room associated with base to listen on changes
-  await subscribeToBaseChangedEvent(
+  await subscribeToBaseChangedEvent({
     socket,
-    project.airtable.personalAccessToken,
-    project.airtable.baseId,
-    userId,
-    projectId
-  );
+    personalAccessToken: project.airtable.personalAccessToken,
+    baseId: project.airtable.baseId,
+  });
 
   // return initial data with success status
   callback(
     makeSuccessResponse(base, 200, "You have successfully subscribed to base.")
   );
 };
+
+const emitBaseChangedEvent = registerEvent(
+  "base-changed",
+  async (socketIoServer, payload: BaseChangedEvent) => {
+    const {baseId, webhookId} = payload;
+    // find webhook entry
+    const baseEntry = await readBaseEntry({baseId});
+    if (!baseEntry)
+      throw Error(`Could not find webhook entry for base: ${baseId}`);
+    
+    // try every personal access token to retrieve payloads
+    let payloads : Array<WebhookPayload> | null = null;
+    for (const token of baseEntry.personalAccessTokens) {
+      try {
+        payloads = await getListOfWebhookPayloads(
+          token,
+          baseId,
+          webhookId
+        );
+        break;
+      } catch {
+        console.error(`Failed to retrieve webhook payloads for base (${baseId}) using personal access token: ${token}`);
+      }
+    }
+    if (payloads === null) {
+      throw Error(`No working personal access token for base: ${baseId}`)
+    }
+    
+
+    // traverse webhook payload: for each change in payload
+    for (const p of payloads) {
+      // for each change in payload...
+      const syncNotification = traverseAirtableWebhookPayload(baseId, p);
+      // emit a SyncNotification to client(s)
+      socketIoServer.to(baseId).emit(`${baseId}:changed`, syncNotification);
+    }
+  }
+);
 
 export const receiveAirtableWebhookNotification: RestApiRouteHandler = (
   req,
