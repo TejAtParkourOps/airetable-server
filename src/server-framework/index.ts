@@ -30,6 +30,9 @@ export {
   RestApiRouteSpecification,
   RestApiRouteHandler,
 } from "./rest-api-server";
+export {
+  extractErrorDescription
+} from "./error-handler"
 
 export interface ServerConfiguration {
   host: string;

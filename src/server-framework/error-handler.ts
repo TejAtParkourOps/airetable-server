@@ -2,7 +2,7 @@ import { makeErrorResponse } from "@parkour-ops/airetable-contract";
 
 const noErrorDescription = "<No description available.>";
 
-function extractErrorDescription(error: any) {
+export function extractErrorDescription(error: any) {
   if (error instanceof Error) {
     return error.message;
   } else if (typeof error === "string") {
