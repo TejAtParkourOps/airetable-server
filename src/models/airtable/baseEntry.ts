@@ -83,19 +83,17 @@ export async function ensureBaseEntry(args: {
     assert(baseEntry);
     // add personal access token is not present in entry
     if (!baseEntry.personalAccessTokens.includes(personalAccessToken)) {
-      await fb
-        .db(address)
-        .update(
-          {
-            personalAccessToken: [
-              ...baseEntry.personalAccessTokens,
-              personalAccessToken,
-            ],
-          },
-          (err) => {
-            if (err) throw err;
-          }
-        );
+      await fb.db(address).update(
+        {
+          personalAccessToken: [
+            ...baseEntry.personalAccessTokens,
+            personalAccessToken,
+          ],
+        },
+        (err) => {
+          if (err) throw err;
+        }
+      );
     }
   } else {
     // delete all registered webhooks
