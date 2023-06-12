@@ -68,14 +68,12 @@ export async function ensureBaseEntry(args: {
   if (baseEntry) {
     // check if personal access token included, if not: include it
     if (!baseEntry.personalAccessTokens.includes(personalAccessToken)) {
-      await fb
-        .db(address)
-        .update({
-          personalAccessTokens: [
-            ...baseEntry.personalAccessTokens,
-            personalAccessToken,
-          ],
-        });
+      await fb.db(address).update({
+        personalAccessTokens: [
+          ...baseEntry.personalAccessTokens,
+          personalAccessToken,
+        ],
+      });
     }
     // ensure webhook is valid
     const registeredWebhook = webhooks.find(
