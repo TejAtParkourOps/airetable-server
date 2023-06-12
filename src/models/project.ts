@@ -41,20 +41,20 @@ export async function createProject(
     bases = (await getListOfBases(project.airtable.personalAccessToken)).bases;
   } catch (err) {
     throw "could not probe Airtable base; check personal access token is valid.";
-  } 
-  if (!bases.find(base => base.id === project.airtable.baseId))
-      throw "the requested Airtable base does not exist, or the personal access token does not have sufficient permission."
+  }
+  if (!bases.find((base) => base.id === project.airtable.baseId))
+    throw "the requested Airtable base does not exist, or the personal access token does not have sufficient permission.";
   // generate id and compute address
   const projectId = uuidv4();
   const dbAddress = `users/${userId}/projects/${projectId}`;
   // set
   // console.debug(`Creating project at address: ${dbAddress}`, project);
   await fb.db(dbAddress).set({
-      id: projectId,
-      name: project.name ?? untitled,
-      description: project.description ?? undescribed,
-      airtable: project.airtable,
-      created: Date.now(),
+    id: projectId,
+    name: project.name ?? untitled,
+    description: project.description ?? undescribed,
+    airtable: project.airtable,
+    created: Date.now(),
   });
   // read what was set
   const proj = await readProject(userId, projectId);

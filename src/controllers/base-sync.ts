@@ -40,16 +40,14 @@ export type BaseChangedEvent = {
   timestamp: number;
 };
 
-async function subscribeToBaseChangedEvent(
-  args: {
-    socket: SocketIoSocket,
-    personalAccessToken: string,
-    baseId: string
-  }
-) {
-  const {socket, personalAccessToken, baseId} = args;
+async function subscribeToBaseChangedEvent(args: {
+  socket: SocketIoSocket;
+  personalAccessToken: string;
+  baseId: string;
+}) {
+  const { socket, personalAccessToken, baseId } = args;
   // ensure webhook is set up so we can receive change notifications at REST endpoint
-  await ensureBaseEntry({personalAccessToken, baseId});
+  await ensureBaseEntry({ personalAccessToken, baseId });
   // add user socket (representing session webhook) to room associated with base (since each base has only one webhook, shared across all projects affiliated with the base)
   socket.join(baseId);
 }
@@ -495,30 +493,27 @@ export const createBaseSyncHandler: SocketIoRouteHandler<
 const emitBaseChangedEvent = registerEvent(
   "base-changed",
   async (socketIoServer, payload: BaseChangedEvent) => {
-    const {baseId, webhookId} = payload;
+    const { baseId, webhookId } = payload;
     // find webhook entry
-    const baseEntry = await readBaseEntry({baseId});
+    const baseEntry = await readBaseEntry({ baseId });
     if (!baseEntry)
       throw Error(`Could not find webhook entry for base: ${baseId}`);
-    
+
     // try every personal access token to retrieve payloads
-    let payloads : Array<WebhookPayload> | null = null;
+    let payloads: Array<WebhookPayload> | null = null;
     for (const token of baseEntry.personalAccessTokens) {
       try {
-        payloads = await getListOfWebhookPayloads(
-          token,
-          baseId,
-          webhookId
-        );
+        payloads = await getListOfWebhookPayloads(token, baseId, webhookId);
         break;
       } catch {
-        console.error(`Failed to retrieve webhook payloads for base (${baseId}) using personal access token: ${token}`);
+        console.error(
+          `Failed to retrieve webhook payloads for base (${baseId}) using personal access token: ${token}`
+        );
       }
     }
     if (payloads === null) {
-      throw Error(`No working personal access token for base: ${baseId}`)
+      throw Error(`No working personal access token for base: ${baseId}`);
     }
-    
 
     // traverse webhook payload: for each change in payload
     for (const p of payloads) {

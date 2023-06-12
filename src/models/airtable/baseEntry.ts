@@ -20,14 +20,14 @@ type WebhookEntry = {
 
 type BaseEntry = {
   id: string;
-  personalAccessTokens: Array<string>
-  webhook: WebhookEntry
+  personalAccessTokens: Array<string>;
+  webhook: WebhookEntry;
 };
 
-const dbAddress = (args: {baseId: string}) => `bases/${args.baseId}`;
+const dbAddress = (args: { baseId: string }) => `bases/${args.baseId}`;
 
-export async function readBaseEntry(args: {baseId: string}) {
-  const {baseId} = args;
+export async function readBaseEntry(args: { baseId: string }) {
+  const { baseId } = args;
   const address = dbAddress(args);
   console.log(address);
   const _entry = await fb.db(address).get();
@@ -51,52 +51,73 @@ function isWebhookValid(wh: WebhookInfo) {
   const isNotificationUrlCorrect = wh.notificationUrl === notificationUrl;
   // return result
   const isValid = isNotExpired && isNotificationUrlCorrect;
-  console.debug(`Is webhook (${wh.id}) valid? ${isValid ? 'YES' : 'NO'}`);
+  console.debug(`Is webhook (${wh.id}) valid? ${isValid ? "YES" : "NO"}`);
   return isValid;
 }
 
 export async function ensureBaseEntry(args: {
-  baseId: string,
-  personalAccessToken: string,
+  baseId: string;
+  personalAccessToken: string;
 }) {
-  const {baseId, personalAccessToken} = args;
-  const baseEntry = await readBaseEntry({baseId});
-  const address = dbAddress({baseId});
-  const webhooks = (await airtableGetListOfWebhooks(personalAccessToken, baseId)).webhooks;
+  const { baseId, personalAccessToken } = args;
+  const baseEntry = await readBaseEntry({ baseId });
+  const address = dbAddress({ baseId });
+  const webhooks = (
+    await airtableGetListOfWebhooks(personalAccessToken, baseId)
+  ).webhooks;
   if (baseEntry) {
     // check if personal access token included, if not: include it
     if (!baseEntry.personalAccessTokens.includes(personalAccessToken)) {
-      await fb.db(address).update({ personalAccessTokens: [...baseEntry.personalAccessTokens, personalAccessToken ]});
+      await fb
+        .db(address)
+        .update({
+          personalAccessTokens: [
+            ...baseEntry.personalAccessTokens,
+            personalAccessToken,
+          ],
+        });
     }
     // ensure webhook is valid
-    const registeredWebhook = webhooks.find( wh => wh.id === baseEntry.webhook.id );
+    const registeredWebhook = webhooks.find(
+      (wh) => wh.id === baseEntry.webhook.id
+    );
     if (!registeredWebhook || !isWebhookValid(registeredWebhook)) {
       // delete existing
       if (registeredWebhook)
-        airtableDeleteWebhook(personalAccessToken, baseId, registeredWebhook.id);
+        airtableDeleteWebhook(
+          personalAccessToken,
+          baseId,
+          registeredWebhook.id
+        );
       // create new webhook and update entry
-      const newWebhook = await airtableCreateWebhook(personalAccessToken, baseId, notificationUrl);
-      const newWebhookEntry : WebhookEntry = {
+      const newWebhook = await airtableCreateWebhook(
+        personalAccessToken,
+        baseId,
+        notificationUrl
+      );
+      const newWebhookEntry: WebhookEntry = {
         id: newWebhook.id,
-        macSecretBase64: newWebhook.macSecretBase64
-      }
+        macSecretBase64: newWebhook.macSecretBase64,
+      };
       await fb.db(address).update({
-        webhook: newWebhookEntry
-      })
+        webhook: newWebhookEntry,
+      });
     }
-  } 
-  else {
+  } else {
     // create new entry from scratch for this base, with brand new webhook
-    const newWebhook = await airtableCreateWebhook(personalAccessToken, baseId, notificationUrl);
-    const baseEntry : BaseEntry = {
+    const newWebhook = await airtableCreateWebhook(
+      personalAccessToken,
+      baseId,
+      notificationUrl
+    );
+    const baseEntry: BaseEntry = {
       id: baseId,
       personalAccessTokens: [personalAccessToken],
       webhook: {
         id: newWebhook.id,
-        macSecretBase64: newWebhook.macSecretBase64
-      }
-    }
+        macSecretBase64: newWebhook.macSecretBase64,
+      },
+    };
     await fb.db(address).set(baseEntry);
   }
 }
-
