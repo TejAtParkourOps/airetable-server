@@ -8,6 +8,7 @@ import {
 } from "../../integrations/airtable";
 import configManager from "../../configuration-manager";
 import fb from "../../integrations/firebase";
+import { assert } from "ts-essentials";
 export { AirtableWebhookNotification } from "../../integrations/airtable";
 
 const notificationUrl =
@@ -60,62 +61,66 @@ export async function ensureBaseEntry(args: {
   personalAccessToken: string;
 }) {
   const { baseId, personalAccessToken } = args;
-  const baseEntry = await readBaseEntry({ baseId });
   const address = dbAddress({ baseId });
-  const webhooks = (
+  // get webhooks registered for this base
+  let webhooks = (
     await airtableGetListOfWebhooks(personalAccessToken, baseId)
-  ).webhooks;
-  if (baseEntry) {
-    // check if personal access token included, if not: include it
-    if (!baseEntry.personalAccessTokens.includes(personalAccessToken)) {
-      await fb.db(address).update({
-        personalAccessTokens: [
-          ...baseEntry.personalAccessTokens,
-          personalAccessToken,
-        ],
-      });
-    }
-    // ensure webhook is valid
-    const registeredWebhook = webhooks.find(
-      (wh) => wh.id === baseEntry.webhook.id
-    );
-    if (!registeredWebhook || !isWebhookValid(registeredWebhook)) {
-      // delete existing
-      if (registeredWebhook)
-        airtableDeleteWebhook(
-          personalAccessToken,
-          baseId,
-          registeredWebhook.id
+  ).webhooks.filter((wh) => wh.notificationUrl === notificationUrl);
+  // check if entry exists for base
+  const baseEntry = await readBaseEntry({ baseId });
+  const baseEntryIsValid = baseEntry
+    ? (() => {
+        const registeredWebhook = webhooks.find(
+          (wh) => wh.id === baseEntry.webhook.id
         );
-      // create new webhook and update entry
-      const newWebhook = await airtableCreateWebhook(
-        personalAccessToken,
-        baseId,
-        notificationUrl
-      );
-      const newWebhookEntry: WebhookEntry = {
-        id: newWebhook.id,
-        macSecretBase64: newWebhook.macSecretBase64,
-      };
-      await fb.db(address).update({
-        webhook: newWebhookEntry,
-      });
+        const isValid = registeredWebhook
+          ? isWebhookValid(registeredWebhook)
+          : false;
+        return !!registeredWebhook && isValid;
+      })()
+    : false;
+  if (baseEntryIsValid) {
+    assert(baseEntry);
+    // add personal access token is not present in entry
+    if (!baseEntry.personalAccessTokens.includes(personalAccessToken)) {
+      await fb
+        .db(address)
+        .update(
+          {
+            personalAccessToken: [
+              ...baseEntry.personalAccessTokens,
+              personalAccessToken,
+            ],
+          },
+          (err) => {
+            if (err) throw err;
+          }
+        );
     }
   } else {
-    // create new entry from scratch for this base, with brand new webhook
+    // delete all registered webhooks
+    for (const wh of webhooks) {
+      await airtableDeleteWebhook(personalAccessToken, baseId, wh.id);
+    }
+    // create new webhook + entry
     const newWebhook = await airtableCreateWebhook(
       personalAccessToken,
       baseId,
       notificationUrl
     );
-    const baseEntry: BaseEntry = {
+    const newBaseEntry: BaseEntry = {
       id: baseId,
-      personalAccessTokens: [personalAccessToken],
+      personalAccessTokens: [
+        personalAccessToken,
+        ...(baseEntry ? baseEntry.personalAccessTokens : []),
+      ],
       webhook: {
         id: newWebhook.id,
         macSecretBase64: newWebhook.macSecretBase64,
       },
     };
-    await fb.db(address).set(baseEntry);
+    await fb.db(address).set(newBaseEntry, (err) => {
+      if (err) throw err;
+    });
   }
 }
