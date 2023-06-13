@@ -7,6 +7,7 @@ import {
   SyncNotification,
   Field,
   Record as Rec,
+  Table,
 } from "@parkour-ops/airetable-contract";
 import { readProject } from "../models/project";
 import {
@@ -15,6 +16,7 @@ import {
   AirtableWebhookNotification,
   ensureBaseEntry,
   readBaseEntry,
+  fetchTables,
 } from "../models/airtable";
 import {
   SocketIoRouteHandler,
@@ -31,6 +33,9 @@ import {
   CreateRecordSpec,
   ChangeFieldSpec,
   ChangeRecordSpec,
+  getListOfTablesInBase,
+  AirtableListTablesResponse,
+  AirtableTable,
 } from "../integrations/airtable";
 import { untitled, undescribed } from "../generic";
 
@@ -52,23 +57,17 @@ async function subscribeToBaseChangedEvent(args: {
   socket.join(baseId);
 }
 
-function fieldSpecsToFields(
-  baseId: string,
-  tableId: string,
-  fieldSpecs?: { [id: string]: CreateFieldSpec }
-) {
-  const fields: { [id: string]: Field } = {};
-  if (!fieldSpecs) return fields;
-  for (const [fieldId, fieldSpec] of Object.entries(fieldSpecs)) {
-    fields[fieldId] = {
-      id: fieldId,
-      name: fieldSpec.name,
-      description: undescribed,
-      type: fieldSpec.type,
-    };
-  }
-  return fields;
-}
+// function fieldSpecsToFields(
+//   baseId: string,
+//   tableId: string,
+//   tableSchema: Table,
+//   fieldSpecs?: { [id: string]: CreateFieldSpec }
+// ) {
+//   if (!fieldSpecs) 
+//     return {}
+//   else
+//     return tableSchema.fields
+// }
 
 // function cellSpecsToCells(
 //   tableFields: { [id: string]: Field },
@@ -88,7 +87,7 @@ function fieldSpecsToFields(
 function recordSpecsToRecords(
   baseId: string,
   tableId: string,
-  tableFields: { [id: string]: Field },
+  tableFields: { [id: string]: Field<any> },
   recordSpecs?: { [id: string]: CreateRecordSpec }
 ) {
   const records: { [id: string]: Rec } = {};
@@ -105,16 +104,13 @@ function recordSpecsToRecords(
 
 function parseTableAdditions(
   baseId: string,
+  baseSchema: Record<string, Table>,
   createTableSpecs?: { [id: string]: CreateTableSpec }
 ) {
   const tablesToAdd: Array<Change<"create", "table">> = [];
   if (!createTableSpecs) return tablesToAdd;
   for (const [tableId, tableSpec] of Object.entries(createTableSpecs)) {
-    const tableFields = fieldSpecsToFields(
-      baseId,
-      tableId,
-      tableSpec.fieldsById
-    );
+    const tableFields = baseSchema[tableId].fields;
     tablesToAdd.push({
       type: "create",
       resourceAddress: {
@@ -167,27 +163,23 @@ function parseTableDeletions(
 function parseFieldCreationInTable(
   baseId: string,
   tableId: string,
+  tableSchema: Table,
   createFieldSpec?: { [id: string]: CreateFieldSpec }
 ) {
+  if (!createFieldSpec) return [];
   const fieldsToCreate: Array<Change<"create", "field">> = [];
-  if (!createFieldSpec) return fieldsToCreate;
   //
-  for (const [key, val] of Object.entries(createFieldSpec)) {
+  for (const [fieldId, fieldSpec] of Object.entries(createFieldSpec)) {
     fieldsToCreate.push({
       type: "create",
       resourceAddress: {
         is: "field",
         baseId,
         tableId,
-        fieldId: key,
+        fieldId: fieldId,
         recordId: null,
       },
-      data: {
-        id: key,
-        name: val?.name ?? untitled,
-        description: undescribed,
-        type: val?.type,
-      },
+      data: tableSchema.fields[fieldId],
     });
   }
   //
@@ -197,10 +189,11 @@ function parseFieldCreationInTable(
 function parseFieldUpdateInTable(
   baseId: string,
   tableId: string,
+  tableSchema: Table,
   changeFieldSpec?: { [id: string]: ChangeFieldSpec }
 ) {
+  if (!changeFieldSpec) return [];
   const fieldsToUpdate: Array<Change<"update", "field">> = [];
-  if (!changeFieldSpec) return fieldsToUpdate;
   //
   for (const [fieldId, fieldSpec] of Object.entries(changeFieldSpec)) {
     fieldsToUpdate.push({
@@ -212,11 +205,7 @@ function parseFieldUpdateInTable(
         fieldId,
         recordId: null,
       },
-      data: {
-        id: fieldId,
-        name: fieldSpec.current.name ?? fieldSpec.previous?.name ?? untitled,
-        type: fieldSpec.current.type ?? fieldSpec.previous?.type,
-      },
+      data: tableSchema.fields[fieldId]
     });
   }
   //
@@ -333,6 +322,7 @@ function parseRecordDeletionInTable(
 function parseTableUpdates(
   changes: Array<Change<any, any>>,
   baseId: string,
+  baseSchema: Record<string, Table>,
   changeTablesSpec?: { [id: string]: ChangeTableSpec }
 ) {
   const tablesToUpdate: Array<Change<"update", "table">> = [];
@@ -368,12 +358,13 @@ function parseTableUpdates(
       ...parseFieldCreationInTable(
         baseId,
         tableId,
+        baseSchema[tableId],
         tableSpec?.createdFieldsById
       )
     );
     // process field updates
     changes.push(
-      ...parseFieldUpdateInTable(baseId, tableId, tableSpec?.changedFieldsById)
+      ...parseFieldUpdateInTable(baseId, tableId, baseSchema[tableId], tableSpec?.changedFieldsById)
     );
     // process field deletions
     changes.push(
@@ -410,15 +401,28 @@ function parseTableUpdates(
   }
 }
 
-function traverseAirtableWebhookPayload(
+async function traverseAirtableWebhookPayload(
+  personalAccessToken: string,
   baseId: string,
   payload: WebhookPayload
 ) {
   const changes: Array<Change<any, any>> = [];
+  // get latest base schema as reference point only if required
+  const hasSchemaChanged = 
+    ((payload?.createdTablesById && Object.values(payload.createdTablesById).length > 0) ||
+    (payload?.changedTablesById && Object.values(payload.changedTablesById).reduce<boolean>((prev, curr) => { 
+        return prev || 
+                        (curr?.createdFieldsById && Object.values(curr.createdFieldsById).length > 0)
+                    ||
+                        (curr?.changedFieldsById && Object.values(curr.changedFieldsById).length > 0)
+      }, 
+      false
+    ))) ?? false;
+  const baseSchema = hasSchemaChanged ? (await fetchTables(personalAccessToken, baseId, true)) : {};
   // deduce changes
   changes.push(...parseTableDeletions(baseId, payload.destroyedTableIds));
-  changes.push(...parseTableAdditions(baseId, payload.createdTablesById));
-  parseTableUpdates(changes, baseId, payload.changedTablesById);
+  changes.push(...parseTableAdditions(baseId, baseSchema, payload.createdTablesById));
+  parseTableUpdates(changes, baseId, baseSchema, payload.changedTablesById);
   // return result
   const result: SyncNotification = {
     number: payload.baseTransactionNumber,
@@ -501,9 +505,11 @@ const emitBaseChangedEvent = registerEvent(
 
     // try every personal access token to retrieve payloads
     let payloads: Array<WebhookPayload> | null = null;
+    let workingToken: string | null = null;
     for (const token of baseEntry.personalAccessTokens) {
       try {
         payloads = await getListOfWebhookPayloads(token, baseId, webhookId);
+        workingToken = token;
         break;
       } catch {
         console.error(
@@ -511,14 +517,14 @@ const emitBaseChangedEvent = registerEvent(
         );
       }
     }
-    if (payloads === null) {
+    if (workingToken === null || payloads === null) {
       throw Error(`No working personal access token for base: ${baseId}`);
     }
 
     // traverse webhook payload: for each change in payload
     for (const p of payloads) {
       // for each change in payload...
-      const syncNotification = traverseAirtableWebhookPayload(baseId, p);
+      const syncNotification = await traverseAirtableWebhookPayload(workingToken, baseId, p);
       // emit a SyncNotification to client(s)
       socketIoServer.to(baseId).emit(`${baseId}:changed`, syncNotification);
     }
