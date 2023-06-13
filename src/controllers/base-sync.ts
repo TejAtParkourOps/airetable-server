@@ -63,7 +63,7 @@ async function subscribeToBaseChangedEvent(args: {
 //   tableSchema: Table,
 //   fieldSpecs?: { [id: string]: CreateFieldSpec }
 // ) {
-//   if (!fieldSpecs) 
+//   if (!fieldSpecs)
 //     return {}
 //   else
 //     return tableSchema.fields
@@ -205,7 +205,7 @@ function parseFieldUpdateInTable(
         fieldId,
         recordId: null,
       },
-      data: tableSchema.fields[fieldId]
+      data: tableSchema.fields[fieldId],
     });
   }
   //
@@ -364,7 +364,12 @@ function parseTableUpdates(
     );
     // process field updates
     changes.push(
-      ...parseFieldUpdateInTable(baseId, tableId, baseSchema[tableId], tableSpec?.changedFieldsById)
+      ...parseFieldUpdateInTable(
+        baseId,
+        tableId,
+        baseSchema[tableId],
+        tableSpec?.changedFieldsById
+      )
     );
     // process field deletions
     changes.push(
@@ -408,20 +413,31 @@ async function traverseAirtableWebhookPayload(
 ) {
   const changes: Array<Change<any, any>> = [];
   // get latest base schema as reference point only if required
-  const hasSchemaChanged = 
-    ((payload?.createdTablesById && Object.values(payload.createdTablesById).length > 0) ||
-    (payload?.changedTablesById && Object.values(payload.changedTablesById).reduce<boolean>((prev, curr) => { 
-        return prev || 
-                        (curr?.createdFieldsById && Object.values(curr.createdFieldsById).length > 0)
-                    ||
-                        (curr?.changedFieldsById && Object.values(curr.changedFieldsById).length > 0)
-      }, 
-      false
-    ))) ?? false;
-  const baseSchema = hasSchemaChanged ? (await fetchTables(personalAccessToken, baseId, true)) : {};
+  const hasSchemaChanged =
+    ((payload?.createdTablesById &&
+      Object.values(payload.createdTablesById).length > 0) ||
+      (payload?.changedTablesById &&
+        Object.values(payload.changedTablesById).reduce<boolean>(
+          (prev, curr) => {
+            return (
+              prev ||
+              (curr?.createdFieldsById &&
+                Object.values(curr.createdFieldsById).length > 0) ||
+              (curr?.changedFieldsById &&
+                Object.values(curr.changedFieldsById).length > 0)
+            );
+          },
+          false
+        ))) ??
+    false;
+  const baseSchema = hasSchemaChanged
+    ? await fetchTables(personalAccessToken, baseId, true)
+    : {};
   // deduce changes
   changes.push(...parseTableDeletions(baseId, payload.destroyedTableIds));
-  changes.push(...parseTableAdditions(baseId, baseSchema, payload.createdTablesById));
+  changes.push(
+    ...parseTableAdditions(baseId, baseSchema, payload.createdTablesById)
+  );
   parseTableUpdates(changes, baseId, baseSchema, payload.changedTablesById);
   // return result
   const result: SyncNotification = {
@@ -524,7 +540,11 @@ const emitBaseChangedEvent = registerEvent(
     // traverse webhook payload: for each change in payload
     for (const p of payloads) {
       // for each change in payload...
-      const syncNotification = await traverseAirtableWebhookPayload(workingToken, baseId, p);
+      const syncNotification = await traverseAirtableWebhookPayload(
+        workingToken,
+        baseId,
+        p
+      );
       // emit a SyncNotification to client(s)
       socketIoServer.to(baseId).emit(`${baseId}:changed`, syncNotification);
     }

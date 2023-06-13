@@ -24,7 +24,7 @@ import {
   DurationTypeReadOption,
   SingleSelectTypeReadOption,
   MultipleSelectsTypeReadOption,
-  ExternalSyncSourceTypeReadOption
+  ExternalSyncSourceTypeReadOption,
 } from "../../integrations/airtable";
 
 function extractPrimaryFieldFromTable(table: AirtableTable): Field<any> {
@@ -42,15 +42,18 @@ function extractPrimaryFieldFromTable(table: AirtableTable): Field<any> {
     currencySymbol: computeCurrencySymbol(_primaryField),
     precision: computePrecision(_primaryField),
     formatString: computeFormatString(_primaryField),
-    selectionChoices: computeSelectionChoices(_primaryField)
+    selectionChoices: computeSelectionChoices(_primaryField),
   };
 }
 
 // TODO: Clean this up!
-function computeReferences<T extends AirtableFieldType>(table: AirtableTable, field: AirtableField<T>) {
+function computeReferences<T extends AirtableFieldType>(
+  table: AirtableTable,
+  field: AirtableField<T>
+) {
   switch (field.type) {
     case "multipleRecordLinks":
-      const mriOptions = (<MultipleRecordLinksTypeReadOption>field.options);
+      const mriOptions = <MultipleRecordLinksTypeReadOption>field.options;
       const mriLinkedTableId = mriOptions.linkedTableId;
       const mriInverseReferenceFieldId = mriOptions.inverseLinkFieldId;
       const mriLimitedToOneRecord = mriOptions.prefersSingleRecordLink;
@@ -60,32 +63,45 @@ function computeReferences<T extends AirtableFieldType>(table: AirtableTable, fi
             id: mriLinkedTableId,
             inverseReferenceFieldId: mriInverseReferenceFieldId,
           },
-          limitedToOneRecord: mriLimitedToOneRecord
-        }
+          limitedToOneRecord: mriLimitedToOneRecord,
+        },
       };
     case "formula":
-      const fieldIds = (<FormulaTypeReadOption>field.options).referencedFieldIds;
+      const fieldIds = (<FormulaTypeReadOption>field.options)
+        .referencedFieldIds;
       return <FieldsReference>{
-        fieldsOfTable: fieldIds ? fieldIds.map( fId => { return { tableId: table.id, fieldId: fId } }) : []
-      }
+        fieldsOfTable: fieldIds
+          ? fieldIds.map((fId) => {
+              return { tableId: table.id, fieldId: fId };
+            })
+          : [],
+      };
     case "rollup":
       const rollupResult = <FieldsReference>{
-        fieldsOfTable: []
+        fieldsOfTable: [],
       };
-      const rollupOptions = (<RollupTypeReadOption>field.options);
-      const rollupLinkedTableId = (()=>{
+      const rollupOptions = <RollupTypeReadOption>field.options;
+      const rollupLinkedTableId = (() => {
         const recordLinkFieldId = rollupOptions?.recordLinkFieldId;
         if (!recordLinkFieldId) return;
-        const recordLinkField = table.fields.find(f => f.id === recordLinkFieldId);
+        const recordLinkField = table.fields.find(
+          (f) => f.id === recordLinkFieldId
+        );
         if (!recordLinkField) return;
-        return (<MultipleRecordLinksTypeReadOption>recordLinkField.options).linkedTableId;
+        return (<MultipleRecordLinksTypeReadOption>recordLinkField.options)
+          .linkedTableId;
       })();
       const rollupFieldInLinkedTable = rollupOptions.fieldIdInLinkedTable;
       if (rollupLinkedTableId && rollupFieldInLinkedTable)
-        rollupResult.fieldsOfTable.push({ tableId: rollupLinkedTableId, fieldId: rollupFieldInLinkedTable });
+        rollupResult.fieldsOfTable.push({
+          tableId: rollupLinkedTableId,
+          fieldId: rollupFieldInLinkedTable,
+        });
       if (rollupOptions.referencedFieldIds) {
         rollupResult.fieldsOfTable.push(
-          ...rollupOptions.referencedFieldIds.map( fId => { return {tableId: table.id, fieldId: fId} })
+          ...rollupOptions.referencedFieldIds.map((fId) => {
+            return { tableId: table.id, fieldId: fId };
+          })
         );
       }
       return rollupResult;
@@ -94,41 +110,58 @@ function computeReferences<T extends AirtableFieldType>(table: AirtableTable, fi
   }
 }
 
-function computeCurrencySymbol<T extends AirtableFieldType>(field: AirtableField<T>) {
+function computeCurrencySymbol<T extends AirtableFieldType>(
+  field: AirtableField<T>
+) {
   if (field.type === "currency") {
     return (<CurrencyTypeReadOption>field.options).symbol;
   }
   return undefined;
 }
 
-function computePrecision<T extends AirtableFieldType>(field: AirtableField<T>) {
+function computePrecision<T extends AirtableFieldType>(
+  field: AirtableField<T>
+) {
   if (field.type === "currency") {
     return (<CurrencyTypeReadOption>field.options).precision;
-  }
-  else if (field.type === "number") {
+  } else if (field.type === "number") {
     return (<NumberTypeReadOption>field.options).precision;
-  }
-  else if (field.type === "percent") {
+  } else if (field.type === "percent") {
     return (<PercentTypeReadOption>field.options).precision;
-  }
-  else return undefined;
+  } else return undefined;
 }
 
-function computeFormatString<T extends AirtableFieldType>(field: AirtableField<T>) {
+function computeFormatString<T extends AirtableFieldType>(
+  field: AirtableField<T>
+) {
   if (field.type === "duration") {
     return (<DurationTypeReadOption>field.options).durationFormat;
   }
   return undefined;
 }
 
-function computeSelectionChoices<T extends AirtableFieldType>(field: AirtableField<T>) {
-  if (field.type === "singleSelect" || field.type === "multipleSelects" || field.type === "externalSyncSource") {
-    return (<SingleSelectTypeReadOption | MultipleSelectsTypeReadOption | ExternalSyncSourceTypeReadOption>field.options).choices.map( c => { return { id: c.id, name: c.name } });
+function computeSelectionChoices<T extends AirtableFieldType>(
+  field: AirtableField<T>
+) {
+  if (
+    field.type === "singleSelect" ||
+    field.type === "multipleSelects" ||
+    field.type === "externalSyncSource"
+  ) {
+    return (<
+      | SingleSelectTypeReadOption
+      | MultipleSelectsTypeReadOption
+      | ExternalSyncSourceTypeReadOption
+    >field.options).choices.map((c) => {
+      return { id: c.id, name: c.name };
+    });
   }
   return undefined;
 }
 
-function extractFieldsFromTable(table: AirtableTable): Record<string, Field<any>> {
+function extractFieldsFromTable(
+  table: AirtableTable
+): Record<string, Field<any>> {
   const result: Record<string, Field<any>> = {};
   table.fields.forEach((_f) => {
     result[_f.id] = {
@@ -140,7 +173,7 @@ function extractFieldsFromTable(table: AirtableTable): Record<string, Field<any>
       currencySymbol: computeCurrencySymbol(_f),
       precision: computePrecision(_f),
       formatString: computeFormatString(_f),
-      selectionChoices: computeSelectionChoices(_f)
+      selectionChoices: computeSelectionChoices(_f),
     };
   });
   return result;
@@ -201,13 +234,9 @@ export async function fetchTables(
       description: _t.description,
       primaryField: extractPrimaryFieldFromTable(_t),
       fields: tableFields,
-      records: omitRecords ? {} :
-        await fetchRecords(
-          personalAccessToken,
-          baseId,
-          _t.id,
-          tableFields
-        ),
+      records: omitRecords
+        ? {}
+        : await fetchRecords(personalAccessToken, baseId, _t.id, tableFields),
     };
   }
   // return

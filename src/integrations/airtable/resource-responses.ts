@@ -33,77 +33,93 @@ export type AirtableFieldType =
   | "lastModifiedBy"
   | "externalSyncSource";
 
-// NOTE: Options for data/time types are omitted: createdTime, lastModifiedTime, date, dateTime, 
+// NOTE: Options for data/time types are omitted: createdTime, lastModifiedTime, date, dateTime,
 
 /**
  * See: {@link https://airtable.com/developers/web/api/field-model#multipleattachment-fieldtype-options}
  */
 export interface MultipleAttachmentsTypeReadOption {
-  isReversed: boolean
+  isReversed: boolean;
 }
 
 export type SingleCollaboratorTypeReadOption = Record<any, any>;
-export type MultipleCollaboratorsTypeReadOption = SingleCollaboratorTypeReadOption;
+export type MultipleCollaboratorsTypeReadOption =
+  SingleCollaboratorTypeReadOption;
 
 /**
  * See: {@link https://airtable.com/developers/web/api/field-model#checkbox-fieldtype-options}
  */
 export interface CheckboxTypeReadOption {
-  color: 'yellowBright' | 'orangeBright' | 'redBright' | 'pinkBright' | 'purpleBright' | 'blueBright' | 'cyanBright' | 'tealBright' | 'greenBright' | 'grayBright',
-  icon:  "check" | "xCheckbox" | "star" | "heart" | "thumbsUp" | "flag" | "dot"
+  color:
+    | "yellowBright"
+    | "orangeBright"
+    | "redBright"
+    | "pinkBright"
+    | "purpleBright"
+    | "blueBright"
+    | "cyanBright"
+    | "tealBright"
+    | "greenBright"
+    | "grayBright";
+  icon: "check" | "xCheckbox" | "star" | "heart" | "thumbsUp" | "flag" | "dot";
 }
 
 /**
  * See: {@link https://airtable.com/developers/web/api/field-model#count-fieldtype-options}
  */
 export interface CountTypeReadOption {
-  isValid: boolean,
-  recordLinkFieldId?: string | null
+  isValid: boolean;
+  recordLinkFieldId?: string | null;
 }
 
 /**
  * See: {@link https://airtable.com/developers/web/api/field-model#currencynumber-fieldtype-options}
  */
 export interface CurrencyTypeReadOption {
-  precision: 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7,
-  symbol: string
+  precision: 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7;
+  symbol: string;
 }
 
 /**
  * See {@link https://airtable.com/developers/web/api/field-model#durationnumber-fieldtype-options}
  */
 export interface DurationTypeReadOption {
-  durationFormat: "h:mm" | "h:mm:ss" | "h:mm:ss.S" | "h:mm:ss.SS" | "h:mm:ss.SSS"
+  durationFormat:
+    | "h:mm"
+    | "h:mm:ss"
+    | "h:mm:ss.S"
+    | "h:mm:ss.SS"
+    | "h:mm:ss.SSS";
 }
 
 /**
  * See {@link https://airtable.com/developers/web/api/field-model#formula-fieldtype-options}
  */
 export interface FormulaTypeReadOption {
-  isValid: boolean,
-  referencedFieldIds: Array<string> | null,
-  result: any // TODO
+  isValid: boolean;
+  referencedFieldIds: Array<string> | null;
+  result: any; // TODO
 }
 
 /**
  * See: {@link https://airtable.com/developers/web/api/field-model#foreignkey-fieldtype-options}
  */
 export interface MultipleRecordLinksTypeReadOption {
-  isReversed: false,
-  linkedTableId: string,
-  prefersSingleRecordLink: boolean,
-  inverseLinkFieldId?: string,
-  viewIdForRecordSelection?: string
+  isReversed: false;
+  linkedTableId: string;
+  prefersSingleRecordLink: boolean;
+  inverseLinkFieldId?: string;
+  viewIdForRecordSelection?: string;
 }
 
 /**
  * See: {@link https://airtable.com/developers/web/api/field-model#lookup-fieldtype-options}
  */
 export interface LookupTypeReadOption {
-  fieldIdInLinkedTable: string | null,
-  isValid: boolean,
-  recordLinkFieldId: string | null,
-  result: any // TODO
+  fieldIdInLinkedTable: string | null;
+  isValid: boolean;
+  recordLinkFieldId: string | null;
+  result: any; // TODO
 }
 
 /**
@@ -111,10 +127,50 @@ export interface LookupTypeReadOption {
  */
 export interface MultipleSelectsTypeReadOption {
   choices: Array<{
-    id: string,
-    name: string,
-    color?: "blueLight2" | "cyanLight2" | "tealLight2" | "greenLight2" | "yellowLight2" | "orangeLight2" | "redLight2" | "pinkLight2" | "purpleLight2" | "grayLight2" | "blueLight1" | "cyanLight1" | "tealLight1" | "greenLight1" | "yellowLight1" | "orangeLight1" | "redLight1" | "pinkLight1" | "purpleLight1" | "grayLight1" | "blueBright" | "cyanBright" | "tealBright" | "greenBright" | "yellowBright" | "orangeBright" | "redBright" | "pinkBright" | "purpleBright" | "grayBright" | "blueDark1" | "cyanDark1" | "tealDark1" | "greenDark1" | "yellowDark1" | "orangeDark1" | "redDark1" | "pinkDark1" | "purpleDark1" | "grayDark1"
-  }>
+    id: string;
+    name: string;
+    color?:
+      | "blueLight2"
+      | "cyanLight2"
+      | "tealLight2"
+      | "greenLight2"
+      | "yellowLight2"
+      | "orangeLight2"
+      | "redLight2"
+      | "pinkLight2"
+      | "purpleLight2"
+      | "grayLight2"
+      | "blueLight1"
+      | "cyanLight1"
+      | "tealLight1"
+      | "greenLight1"
+      | "yellowLight1"
+      | "orangeLight1"
+      | "redLight1"
+      | "pinkLight1"
+      | "purpleLight1"
+      | "grayLight1"
+      | "blueBright"
+      | "cyanBright"
+      | "tealBright"
+      | "greenBright"
+      | "yellowBright"
+      | "orangeBright"
+      | "redBright"
+      | "pinkBright"
+      | "purpleBright"
+      | "grayBright"
+      | "blueDark1"
+      | "cyanDark1"
+      | "tealDark1"
+      | "greenDark1"
+      | "yellowDark1"
+      | "orangeDark1"
+      | "redDark1"
+      | "pinkDark1"
+      | "purpleDark1"
+      | "grayDark1";
+  }>;
 }
 
 /**
@@ -126,34 +182,44 @@ export type SingleSelectTypeReadOption = MultipleSelectsTypeReadOption;
  * See: {@link https://airtable.com/developers/web/api/field-model#decimalorintegernumber-fieldtype-options}
  */
 export interface NumberTypeReadOption {
-  precision: 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8
+  precision: 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
 }
 
 /**
  * See: {@link https://airtable.com/developers/web/api/field-model#percentnumber-fieldtype-options}
  */
 export interface PercentTypeReadOption {
-  precision: 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8
+  precision: 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
 }
 
 /**
  * See: {@link https://airtable.com/developers/web/api/field-model#rating-fieldtype-options}
  */
 export interface RatingTypeReadOption {
-  color: "yellowBright" | "orangeBright" | "redBright" | "pinkBright" | "purpleBright" | "blueBright" | "cyanBright" | "tealBright" | "greenBright" | "grayBright",
-  icon: 	"star" | "heart" | "thumbsUp" | "flag" | "dot",
-  max: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10
+  color:
+    | "yellowBright"
+    | "orangeBright"
+    | "redBright"
+    | "pinkBright"
+    | "purpleBright"
+    | "blueBright"
+    | "cyanBright"
+    | "tealBright"
+    | "greenBright"
+    | "grayBright";
+  icon: "star" | "heart" | "thumbsUp" | "flag" | "dot";
+  max: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10;
 }
 
 /**
  * See: {@link https://airtable.com/developers/web/api/field-model#rollup-fieldtype-options}
  */
 export interface RollupTypeReadOption {
-  fieldIdInLinkedTable?: string,
-  recordLinkFieldId?: string,
-  result?: any
-  isValid?: boolean,
-  referencedFieldIds?: Array<string>
+  fieldIdInLinkedTable?: string;
+  recordLinkFieldId?: string;
+  result?: any;
+  isValid?: boolean;
+  referencedFieldIds?: Array<string>;
 }
 
 /**
@@ -172,23 +238,39 @@ export interface AirtableField<T extends AirtableFieldType> {
   name: string;
   description: string;
   type: T;
-  options: T extends "checkbox" ? CheckboxTypeReadOption :
-           T extends "count" ? CountTypeReadOption :
-           T extends "currency" ? CurrencyTypeReadOption :
-           T extends "duration" ? DurationTypeReadOption :
-           T extends "formula" ? FormulaTypeReadOption :
-           T extends "multipleRecordLinks" ? MultipleRecordLinksTypeReadOption :
-           T extends "lookup" ? LookupTypeReadOption :
-           T extends "multipleSelects" ? MultipleSelectsTypeReadOption :
-           T extends "number" ? NumberTypeReadOption :
-           T extends "percent" ? PercentTypeReadOption :
-           T extends "rating" ? RatingTypeReadOption :
-           T extends "rollup" ? RollupTypeReadOption :
-           T extends "singleSelect" ? SingleSelectTypeReadOption :
-           T extends "externalSyncSource" ? ExternalSyncSourceTypeReadOption :
-           T extends "singleCollaborator" ? SingleCollaboratorTypeReadOption :
-           T extends "multipleCollaborators" ? MultipleCollaboratorsTypeReadOption :
-           unknown
+  options: T extends "checkbox"
+    ? CheckboxTypeReadOption
+    : T extends "count"
+    ? CountTypeReadOption
+    : T extends "currency"
+    ? CurrencyTypeReadOption
+    : T extends "duration"
+    ? DurationTypeReadOption
+    : T extends "formula"
+    ? FormulaTypeReadOption
+    : T extends "multipleRecordLinks"
+    ? MultipleRecordLinksTypeReadOption
+    : T extends "lookup"
+    ? LookupTypeReadOption
+    : T extends "multipleSelects"
+    ? MultipleSelectsTypeReadOption
+    : T extends "number"
+    ? NumberTypeReadOption
+    : T extends "percent"
+    ? PercentTypeReadOption
+    : T extends "rating"
+    ? RatingTypeReadOption
+    : T extends "rollup"
+    ? RollupTypeReadOption
+    : T extends "singleSelect"
+    ? SingleSelectTypeReadOption
+    : T extends "externalSyncSource"
+    ? ExternalSyncSourceTypeReadOption
+    : T extends "singleCollaborator"
+    ? SingleCollaboratorTypeReadOption
+    : T extends "multipleCollaborators"
+    ? MultipleCollaboratorsTypeReadOption
+    : unknown;
 }
 
 export interface AirtableTable {
