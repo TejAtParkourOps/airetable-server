@@ -26,13 +26,23 @@ import {
   ExternalSyncSourceTypeReadOption,
 } from "../../integrations/airtable";
 
-function extractPrimaryFieldFromTable(table: AirtableTable): Field<any> {
+function extractPrimaryFieldFromTable(
+  baseId: string,
+  table: AirtableTable
+): Field<any> {
   const _primaryField = table.fields.find(
     (_f) => _f.id === table.primaryFieldId
   );
   if (!_primaryField)
     throw Error("Failed to extract primary field from raw table data.");
   return {
+    address: {
+      is: "field",
+      baseId: baseId,
+      tableId: table.id,
+      fieldId: _primaryField.id,
+      recordId: null,
+    },
     id: _primaryField.id,
     name: _primaryField.name,
     description: _primaryField.description,
@@ -141,11 +151,19 @@ function computeSelectionChoices<T extends AirtableFieldType>(
 }
 
 function extractFieldsFromTable(
+  baseId: string,
   table: AirtableTable
 ): Record<string, Field<any>> {
   const result: Record<string, Field<any>> = {};
   table.fields.forEach((_f) => {
     result[_f.id] = {
+      address: {
+        is: "field",
+        baseId: baseId,
+        tableId: table.id,
+        fieldId: _f.id,
+        recordId: null,
+      },
       id: _f.id,
       name: _f.name,
       description: _f.description,
@@ -188,6 +206,13 @@ async function fetchRecords(
   // produce entry for each entry
   _records.forEach((_r) => {
     result[_r.id] = {
+      address: {
+        is: "record",
+        baseId: baseId,
+        tableId: tableId,
+        fieldId: null,
+        recordId: _r.id,
+      },
       id: _r.id,
       createdTime: Date.parse(_r.createdTime),
       cells: _r.fields, //extractCellsFromRecord(_r, tableFields),
@@ -208,12 +233,19 @@ export async function fetchTables(
     .tables;
   // produce table for every entry
   for (const _t of _tables) {
-    const tableFields = extractFieldsFromTable(_t);
+    const tableFields = extractFieldsFromTable(baseId, _t);
     result[_t.id] = {
+      address: {
+        is: "table",
+        baseId: baseId,
+        tableId: _t.id,
+        fieldId: null,
+        recordId: null,
+      },
       id: _t.id,
       name: _t.name,
       description: _t.description,
-      primaryField: extractPrimaryFieldFromTable(_t),
+      primaryField: extractPrimaryFieldFromTable(baseId, _t),
       fields: tableFields,
       records: omitRecords
         ? {}
@@ -234,6 +266,13 @@ export async function readBase(
   if (!_baseInfo) return null;
   // produce result base stub
   const base: Base = {
+    address: {
+      is: "base",
+      baseId: baseId,
+      tableId: null,
+      fieldId: null,
+      recordId: null,
+    },
     id: _baseInfo.id,
     name: _baseInfo.name,
     tables: await fetchTables(personalAccessToken, baseId),

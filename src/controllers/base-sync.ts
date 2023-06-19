@@ -94,6 +94,13 @@ function recordSpecsToRecords(
   if (!recordSpecs) return records;
   for (const [recordId, recordSpec] of Object.entries(recordSpecs)) {
     records[recordId] = {
+      address: {
+        is: "record",
+        baseId: baseId,
+        tableId: tableId,
+        recordId: recordId,
+        fieldId: null,
+      },
       id: recordId,
       createdTime: Date.parse(recordSpec.createdTime),
       cells: recordSpec.cellValuesByFieldId, //cellSpecsToCells(tableFields, recordSpec.cellValuesByFieldId),
@@ -121,6 +128,13 @@ function parseTableAdditions(
         fieldId: null,
       },
       data: {
+        address: {
+          is: "table",
+          baseId: baseId,
+          tableId: tableId,
+          recordId: null,
+          fieldId: null,
+        },
         id: tableId,
         name: tableSpec.metadata?.name ?? untitled,
         description: tableSpec.metadata?.description ?? undescribed,
@@ -256,6 +270,13 @@ function parseRecordCreationInTable(
         fieldId: null,
       },
       data: {
+        address: {
+          is: "record",
+          baseId: baseId,
+          tableId: tableId,
+          recordId: recordId,
+          fieldId: null,
+        },
         id: recordId,
         createdTime: Date.parse(recordSpec.createdTime),
         cells: recordSpec.cellValuesByFieldId, //cellSpecsToCells(tableFields, recordSpec.cellValuesByFieldId)
@@ -285,6 +306,13 @@ function parseRecordUpdateInTable(
         fieldId: null,
       },
       data: {
+        address: {
+          is: "record",
+          baseId: baseId,
+          tableId: tableId,
+          fieldId: null,
+          recordId: recordId,
+        },
         id: recordId,
         cells: recordSpec.current,
       },
@@ -340,6 +368,13 @@ function parseTableUpdates(
           fieldId: null,
         },
         data: {
+          address: {
+            is: "table",
+            baseId: baseId,
+            tableId: tableId,
+            recordId: null,
+            fieldId: null,
+          },
           id: tableId,
           name:
             tableSpec.changedMetadata?.current.name ??
