@@ -3,8 +3,7 @@ import {
   Table,
   Record as RecordEntry,
   Field,
-  RecordsReference,
-  FieldsReference,
+  ReferenceSpec,
   // Cell,
 } from "@parkour-ops/airetable-contract";
 import {
@@ -46,67 +45,49 @@ function extractPrimaryFieldFromTable(table: AirtableTable): Field<any> {
   };
 }
 
-// TODO: Clean this up!
+// TODO: clean this up!
 function computeReferences<T extends AirtableFieldType>(
   table: AirtableTable,
   field: AirtableField<T>
 ) {
-  switch (field.type) {
-    case "multipleRecordLinks":
-      const mriOptions = <MultipleRecordLinksTypeReadOption>field.options;
-      const mriLinkedTableId = mriOptions.linkedTableId;
-      const mriInverseReferenceFieldId = mriOptions.inverseLinkFieldId;
-      const mriLimitedToOneRecord = mriOptions.prefersSingleRecordLink;
-      return <RecordsReference>{
-        recordsFromTable: {
-          table: {
-            id: mriLinkedTableId,
-            inverseReferenceFieldId: mriInverseReferenceFieldId,
-          },
-          limitedToOneRecord: mriLimitedToOneRecord,
-        },
-      };
-    case "formula":
-      const fieldIds = (<FormulaTypeReadOption>field.options)
-        .referencedFieldIds;
-      return <FieldsReference>{
-        fieldsOfTable: fieldIds
-          ? fieldIds.map((fId) => {
-              return { tableId: table.id, fieldId: fId };
-            })
+  if (field.type === "multipleRecordLinks") {
+    const options = <MultipleRecordLinksTypeReadOption>field.options;
+    const result: ReferenceSpec = {
+      multipleRecordLinks: {
+        tableId: options.linkedTableId,
+        inverseMultipleRecordLinksFieldId: options.inverseLinkFieldId,
+        limitedToOneLink: options.prefersSingleRecordLink,
+      },
+    };
+    return result;
+  } else if (field.type === "formula") {
+    const options = <FormulaTypeReadOption>field.options;
+    const result: ReferenceSpec = {
+      formula: {
+        referencedFields: options.referencedFieldIds
+          ? options.referencedFieldIds.map(() => ({
+              tableId: table.id,
+              fieldId: field.id,
+            }))
           : [],
-      };
-    case "rollup":
-      const rollupResult = <FieldsReference>{
-        fieldsOfTable: [],
-      };
-      const rollupOptions = <RollupTypeReadOption>field.options;
-      const rollupLinkedTableId = (() => {
-        const recordLinkFieldId = rollupOptions?.recordLinkFieldId;
-        if (!recordLinkFieldId) return;
-        const recordLinkField = table.fields.find(
-          (f) => f.id === recordLinkFieldId
-        );
-        if (!recordLinkField) return;
-        return (<MultipleRecordLinksTypeReadOption>recordLinkField.options)
-          .linkedTableId;
-      })();
-      const rollupFieldInLinkedTable = rollupOptions.fieldIdInLinkedTable;
-      if (rollupLinkedTableId && rollupFieldInLinkedTable)
-        rollupResult.fieldsOfTable.push({
-          tableId: rollupLinkedTableId,
-          fieldId: rollupFieldInLinkedTable,
-        });
-      if (rollupOptions.referencedFieldIds) {
-        rollupResult.fieldsOfTable.push(
-          ...rollupOptions.referencedFieldIds.map((fId) => {
-            return { tableId: table.id, fieldId: fId };
-          })
-        );
-      }
-      return rollupResult;
-    default:
-      return undefined;
+      },
+    };
+    return result;
+  } else if (field.type === "rollup") {
+    const options = <RollupTypeReadOption>field.options;
+    const result: ReferenceSpec = {
+      rollup: {
+        multipleRecordLinksFieldId: options.recordLinkFieldId,
+        linkedRecordsRollupFieldId: options.fieldIdInLinkedTable,
+        referencedFields: options.referencedFieldIds
+          ? options.referencedFieldIds.map(() => ({
+              tableId: table.id,
+              fieldId: field.id,
+            }))
+          : [],
+      },
+    };
+    return result;
   }
 }
 
