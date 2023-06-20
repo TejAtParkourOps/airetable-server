@@ -3,7 +3,9 @@ import {
   Table,
   Record as RecordEntry,
   Field,
-  ReferenceSpec,
+  MultipleRecordLinksReference,
+  FormulaReference,
+  RollupReference,
   // Cell,
 } from "@parkour-ops/airetable-contract";
 import {
@@ -62,7 +64,7 @@ function computeReferences<T extends AirtableFieldType>(
 ) {
   if (field.type === "multipleRecordLinks") {
     const options = <MultipleRecordLinksTypeReadOption>field.options;
-    const result: ReferenceSpec = {
+    const result: MultipleRecordLinksReference = {
       multipleRecordLinks: {
         tableId: options.linkedTableId,
         inverseMultipleRecordLinksFieldId: options.inverseLinkFieldId,
@@ -72,7 +74,7 @@ function computeReferences<T extends AirtableFieldType>(
     return result;
   } else if (field.type === "formula") {
     const options = <FormulaTypeReadOption>field.options;
-    const result: ReferenceSpec = {
+    const result: FormulaReference = {
       formula: {
         referencedFields: options.referencedFieldIds
           ? options.referencedFieldIds.map(() => ({
@@ -85,7 +87,7 @@ function computeReferences<T extends AirtableFieldType>(
     return result;
   } else if (field.type === "rollup") {
     const options = <RollupTypeReadOption>field.options;
-    const result: ReferenceSpec = {
+    const result: RollupReference = {
       rollup: {
         multipleRecordLinksFieldId: options.recordLinkFieldId,
         linkedRecordsRollupFieldId: options.fieldIdInLinkedTable,
