@@ -18,6 +18,7 @@ import {
   SocketIoApiRouteCollection,
 } from "./socket-api-server";
 import { VerifyAuthTokenFn } from "./request-auth";
+import cors from "cors";
 import { CorsOptions } from "cors";
 import { installEventHandlers } from "./event-handler";
 
@@ -71,6 +72,7 @@ class Service<TDecodedAuthToken extends object> {
 
     // create server structure
     const restApiServer = createRestApiServer();
+    restApiServer.use(cors(config.cors));
     restApiServer.use(parseAsJson());
     let server: HttpServer | HttpsServer | null = null;
     // if (config.useTLS) {
